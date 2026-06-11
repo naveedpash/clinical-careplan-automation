@@ -1,0 +1,422 @@
+{
+  "resourceType": "Bundle",
+  "type": "transaction",
+  "timestamp": "2026-06-10T19:49:56Z",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:f32ca907-8d06-4dfb-b5a3-e6fdfbc05bfb",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "f32ca907-8d06-4dfb-b5a3-e6fdfbc05bfb",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient"
+          ]
+        },
+        "name": [
+          {
+            "use": "official",
+            "family": "Rivera",
+            "given": [
+              "Alex"
+            ]
+          }
+        ],
+        "gender": "female",
+        "birthDate": "1985-03-14",
+        "identifier": [
+          {
+            "use": "usual",
+            "type": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+                  "code": "MR",
+                  "display": "Medical Record Number"
+                }
+              ]
+            },
+            "system": "urn:oid:2.16.840.1.113883.19.5",
+            "value": "MRN-10042"
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Patient"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:9860a6a8-ad4a-46b4-94b4-84bb861ba780",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "9860a6a8-ad4a-46b4-94b4-84bb861ba780",
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "vital-signs",
+                "display": "Vital Signs"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "29463-7",
+              "display": "Body weight"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/f32ca907-8d06-4dfb-b5a3-e6fdfbc05bfb"
+        },
+        "effectiveDateTime": "2026-06-01T08:00:00Z",
+        "valueQuantity": {
+          "value": 98.4,
+          "unit": "kg",
+          "system": "http://unitsofmeasure.org",
+          "code": "kg"
+        }
+      },
+      "request": {
+        "method": "POST",
+        "url": "Observation"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:careplan-f32ca907",
+      "resource": {
+        "resourceType": "CarePlan",
+        "id": "careplan-f32ca907",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-careplan"
+          ]
+        },
+        "status": "active",
+        "intent": "plan",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "718347000",
+                "display": "Weight management program"
+              }
+            ],
+            "text": "weight-management"
+          }
+        ],
+        "subject": {
+          "reference": "Patient/f32ca907-8d06-4dfb-b5a3-e6fdfbc05bfb"
+        },
+        "period": {
+          "start": "2026-06-02"
+        },
+        "activity": [
+          {
+            "reference": {
+              "reference": "MedicationRequest/e5ea86b7-2dc5-4415-94f5-aba7bc3d05f7",
+              "display": "Semaglutide titration week 1"
+            }
+          },
+          {
+            "reference": {
+              "reference": "MedicationRequest/5de005ac-71dd-4936-b63b-3b032c66373b",
+              "display": "Semaglutide titration week 2"
+            }
+          },
+          {
+            "reference": {
+              "reference": "MedicationRequest/6c3681a0-c349-4dfd-962b-e3bebea8fffc",
+              "display": "Semaglutide titration week 3"
+            }
+          },
+          {
+            "reference": {
+              "reference": "MedicationRequest/678a3c05-9fa6-4333-8842-8070519111f4",
+              "display": "Semaglutide titration week 4"
+            }
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "CarePlan"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:e5ea86b7-2dc5-4415-94f5-aba7bc3d05f7",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "e5ea86b7-2dc5-4415-94f5-aba7bc3d05f7",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-medicationrequest"
+          ]
+        },
+        "status": "active",
+        "intent": "order",
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "1991302",
+              "display": "semaglutide 0.25 MG/0.37 ML Pen Injector"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/f32ca907-8d06-4dfb-b5a3-e6fdfbc05bfb"
+        },
+        "authoredOn": "2026-06-02T00:00:00Z",
+        "dosageInstruction": [
+          {
+            "sequence": 1,
+            "text": "Inject 0.25 mg subcutaneously once weekly \u2014 titration week 1",
+            "timing": {
+              "repeat": {
+                "frequency": 1,
+                "period": 1,
+                "periodUnit": "wk",
+                "boundsPeriod": {
+                  "start": "2026-06-02",
+                  "end": "2026-06-08"
+                }
+              }
+            },
+            "doseAndRate": [
+              {
+                "type": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/dose-rate-type",
+                      "code": "ordered",
+                      "display": "Ordered"
+                    }
+                  ]
+                },
+                "doseQuantity": {
+                  "value": 0.25,
+                  "unit": "mg",
+                  "system": "http://unitsofmeasure.org",
+                  "code": "mg"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "MedicationRequest"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:5de005ac-71dd-4936-b63b-3b032c66373b",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "5de005ac-71dd-4936-b63b-3b032c66373b",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-medicationrequest"
+          ]
+        },
+        "status": "active",
+        "intent": "order",
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "1991302",
+              "display": "semaglutide 0.25 MG/0.37 ML Pen Injector"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/f32ca907-8d06-4dfb-b5a3-e6fdfbc05bfb"
+        },
+        "authoredOn": "2026-06-09T00:00:00Z",
+        "dosageInstruction": [
+          {
+            "sequence": 1,
+            "text": "Inject 0.25 mg subcutaneously once weekly \u2014 titration week 2",
+            "timing": {
+              "repeat": {
+                "frequency": 1,
+                "period": 1,
+                "periodUnit": "wk",
+                "boundsPeriod": {
+                  "start": "2026-06-09",
+                  "end": "2026-06-15"
+                }
+              }
+            },
+            "doseAndRate": [
+              {
+                "type": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/dose-rate-type",
+                      "code": "ordered",
+                      "display": "Ordered"
+                    }
+                  ]
+                },
+                "doseQuantity": {
+                  "value": 0.25,
+                  "unit": "mg",
+                  "system": "http://unitsofmeasure.org",
+                  "code": "mg"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "MedicationRequest"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:6c3681a0-c349-4dfd-962b-e3bebea8fffc",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "6c3681a0-c349-4dfd-962b-e3bebea8fffc",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-medicationrequest"
+          ]
+        },
+        "status": "active",
+        "intent": "order",
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "1991302",
+              "display": "semaglutide 0.25 MG/0.37 ML Pen Injector"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/f32ca907-8d06-4dfb-b5a3-e6fdfbc05bfb"
+        },
+        "authoredOn": "2026-06-16T00:00:00Z",
+        "dosageInstruction": [
+          {
+            "sequence": 1,
+            "text": "Inject 0.25 mg subcutaneously once weekly \u2014 titration week 3",
+            "timing": {
+              "repeat": {
+                "frequency": 1,
+                "period": 1,
+                "periodUnit": "wk",
+                "boundsPeriod": {
+                  "start": "2026-06-16",
+                  "end": "2026-06-22"
+                }
+              }
+            },
+            "doseAndRate": [
+              {
+                "type": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/dose-rate-type",
+                      "code": "ordered",
+                      "display": "Ordered"
+                    }
+                  ]
+                },
+                "doseQuantity": {
+                  "value": 0.25,
+                  "unit": "mg",
+                  "system": "http://unitsofmeasure.org",
+                  "code": "mg"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "MedicationRequest"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:678a3c05-9fa6-4333-8842-8070519111f4",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "678a3c05-9fa6-4333-8842-8070519111f4",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-medicationrequest"
+          ]
+        },
+        "status": "active",
+        "intent": "order",
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "1991302",
+              "display": "semaglutide 0.25 MG/0.37 ML Pen Injector"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/f32ca907-8d06-4dfb-b5a3-e6fdfbc05bfb"
+        },
+        "authoredOn": "2026-06-23T00:00:00Z",
+        "dosageInstruction": [
+          {
+            "sequence": 1,
+            "text": "Inject 0.25 mg subcutaneously once weekly \u2014 titration week 4",
+            "timing": {
+              "repeat": {
+                "frequency": 1,
+                "period": 1,
+                "periodUnit": "wk",
+                "boundsPeriod": {
+                  "start": "2026-06-23",
+                  "end": "2026-06-29"
+                }
+              }
+            },
+            "doseAndRate": [
+              {
+                "type": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/dose-rate-type",
+                      "code": "ordered",
+                      "display": "Ordered"
+                    }
+                  ]
+                },
+                "doseQuantity": {
+                  "value": 0.25,
+                  "unit": "mg",
+                  "system": "http://unitsofmeasure.org",
+                  "code": "mg"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "MedicationRequest"
+      }
+    }
+  ]
+}
