@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Quarto / reveal.js render outputs (regenerate with `quarto render presentation.qmd`)
+/.quarto/
+presentation.html
+presentation_files/
+*_files/
+/_site/

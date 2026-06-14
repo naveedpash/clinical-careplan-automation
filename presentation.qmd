@@ -1,0 +1,516 @@
+---
+title: "Automating GLP-1 Titration: A FHIR Deep Dive"
+subtitle: "Production-Grade Clinical Decision Support"
+author: "Naveed Pasha"
+date: today
+format:
+  revealjs:
+    theme: [dark, theme.scss]   # custom dark healthcare theme (see theme.scss)
+    slide-number: true
+    transition: fade
+    transition-speed: default
+    highlight-style: atom-one-dark
+    width: 1200
+    height: 675
+    embed-resources: true       # produce a single self-contained HTML for easy recording/sharing
+    incremental: false          # reveal lists explicitly with the {.incremental} class
+    code-line-numbers: false
+    code-overflow: wrap
+    center: false
+    progress: true
+    controls: true
+    history: true
+    mermaid:
+      theme: dark
+# ---------------------------------------------------------------------------
+# BUILD INSTRUCTIONS
+# ---------------------------------------------------------------------------
+#   Render to a standalone reveal.js HTML deck:
+#       quarto render presentation.qmd
+#   Live-reloading preview while editing:
+#       quarto preview presentation.qmd
+#   Export to PDF (for thumbnails / backup):
+#       1) quarto preview presentation.qmd
+#       2) open the deck, append ?print-pdf to the URL, then print -> Save as PDF
+#       (or) quarto render presentation.qmd --to pdf   # requires a Chromium install
+#
+# RECORDING NOTES
+#   - Output is a single self-contained HTML5 reveal.js deck.
+#   - Capture in OBS / Loom at 1920x1080; the 1200x675 canvas scales cleanly to 16:9.
+#   - Press "S" in the deck to open the speaker-notes window (notes are below each slide).
+#   - Designed for ~90 s per slide => ~12 min narration across 10 slides + demo bridge.
+# ---------------------------------------------------------------------------
+---
+
+<!-- ========================================================================
+SLIDE 1 — TITLE
+========================================================================= -->
+
+## {.center data-menu-title="Title"}
+
+::: {.center}
+# Automating GLP-1 Titration {.r-fit-text}
+
+### A FHIR Deep Dive
+
+#### Production-Grade Clinical Decision Support {.muted}
+
+[**Naveed Pasha**]{.big}
+
+::: {.badges}
+[Python]{.badge}
+[FHIR R4]{.badge}
+[US Core]{.badge}
+[Clinical Automation]{.badge}
+:::
+:::
+
+::: {.notes}
+Hi everyone, and welcome. In this video we're going to look at how to automate
+GLP-1 medication titration — the gradual dose escalation used in weight-management
+programs — using the FHIR R4 healthcare interoperability standard.
+
+This isn't a toy demo. We'll walk through a production-grade engine, written in
+Python, that emits US Core–aligned FHIR resources you can drop straight into an EHR.
+Whether you're a clinician curious about what automation can do, or a developer
+who wants to see real FHIR resource generation, this talk is for you.
+
+Let's get into it.
+:::
+
+<!-- ========================================================================
+SLIDE 2 — THE PROBLEM
+========================================================================= -->
+
+## The Problem {data-menu-title="The Problem"}
+
+[Most GLP-1 weight-management programs still manage titration **manually**.]{.big .red}
+
+::: {.incremental}
+- 📊 [Manual spreadsheets]{.red} for patient tracking
+- 💉 [Inconsistent dosing schedules]{.red} across clinicians
+- 🚨 Adverse-event handling is [reactive, not automated]{.red}
+- 🧩 EHR integration is [fragmented]{.red} and copy-paste driven
+:::
+
+::: {.callout-red .callout}
+Manual ⇒ error-prone. Every spreadsheet edit is an unlogged clinical decision.
+:::
+
+::: {.notes}
+Here's the problem. GLP-1 drugs like semaglutide have exploded in popularity for
+weight management — but the operational side of running these programs is often
+shockingly manual.
+
+Clinics track patients in spreadsheets. Dosing schedules drift between providers.
+When a patient calls in with severe nausea, somebody has to notice, remember the
+protocol, and act — that's reactive, not systematic. And none of this is cleanly
+wired into the EHR, so data gets re-keyed and lost.
+
+For clinicians that means risk and wasted time. For developers that means brittle,
+non-interoperable workflows. We can do much better — and FHIR is how.
+:::
+
+<!-- ========================================================================
+SLIDE 3 — CLINICAL BACKGROUND: WHAT IS TITRATION?
+========================================================================= -->
+
+## What Is GLP-1 Titration? {data-menu-title="Clinical Background"}
+
+[**Titration** = gradual dose escalation for tolerability.]{.big}
+
+Standard semaglutide initiation: [**0.25 mg once weekly**]{.green} for the first 4 weeks.
+
+::: {.timeline}
+[Week 1<br/>0.25 mg]{.week .week-std}
+[➜]{.week-arrow}
+[Week 2<br/>0.25 mg]{.week .week-std}
+[➜]{.week-arrow}
+[Week 3<br/>0.25 mg]{.week .week-std}
+[➜]{.week-arrow}
+[Week 4<br/>0.25 mg]{.week .week-std}
+:::
+
+::: {.incremental}
+- Start [low to minimize GI side effects]{.green} (nausea, vomiting)
+- Doses increase gradually along a [standard pathway]{.green}
+- [Severe adverse events]{.orange} require provider review
+- Patient compliance depends on [predictable dosing]{.green}
+:::
+
+::: {.source}
+Source: FDA semaglutide label — 0.25 mg weekly is the standard initiation dose (not therapeutic; for GI tolerability).
+:::
+
+::: {.notes}
+Quick clinical primer for the developers in the room, and a refresher for clinicians.
+
+Titration just means easing into a medication by raising the dose gradually. GLP-1
+receptor agonists hit the gut hard if you start too high — nausea and vomiting are
+the big tolerability problems. So per the FDA label, semaglutide starts at 0.25 mg
+once weekly. That first 0.25 mg phase isn't even a therapeutic weight-loss dose;
+it exists purely to let the GI system adapt.
+
+The key clinical rule we'll automate: most patients sail straight through, but if
+someone reports a *severe* adverse event, you don't just keep escalating — you hold
+and get a provider involved. Predictable, protocol-driven dosing is what keeps
+patients compliant and safe.
+:::
+
+<!-- ========================================================================
+SLIDE 4 — WHAT IS FHIR?
+========================================================================= -->
+
+## What Is FHIR? Why Does It Matter? {data-menu-title="FHIR 101"}
+
+::: {.callout .callout}
+[**Fast Healthcare Interoperability Resources**]{.blue} — the modern standard for
+exchanging healthcare data. Think of it as [**the Bluetooth of healthcare**]{.fw-bold}:
+standardized, plug-and-play communication between systems.
+:::
+
+::: {.cards}
+::: {.card .card-blue}
+[📋]{.card-icon}
+[CarePlan]{.card-title .blue}
+[The multi-week care pathway tying the whole titration together.]{.card-body}
+:::
+::: {.card .card-blue}
+[💊]{.card-icon}
+[MedicationRequest]{.card-title .blue}
+[One weekly medication order per titration week.]{.card-body}
+:::
+::: {.card .card-blue}
+[✅]{.card-icon}
+[Task]{.card-title .blue}
+[Provider alert raised when an adverse event needs triage.]{.card-body}
+:::
+:::
+
+::: {.callout-green .callout}
+FHIR lets hospitals integrate GLP-1 automation into existing EHR systems
+[**without custom point-to-point code**]{.green}.
+:::
+
+::: {.notes}
+So what is FHIR? It stands for Fast Healthcare Interoperability Resources, and it's
+the modern HL7 standard for moving health data around.
+
+My favorite analogy: FHIR is the Bluetooth of healthcare. Before Bluetooth, every
+device needed its own cable. FHIR is the standardized, plug-and-play layer so any
+compliant system can speak the same language.
+
+For this engine, three FHIR "resources" do the heavy lifting. A CarePlan is the
+overall multi-week pathway. A MedicationRequest is a single weekly order — we'll
+generate four of them. And a Task is a work item we hand to a provider when
+something needs human attention.
+
+The payoff: because these are standard resources, a hospital can plug this
+automation into Epic, Cerner, or any FHIR server without bespoke integration code.
+:::
+
+<!-- ========================================================================
+SLIDE 5 — ENGINE ARCHITECTURE
+========================================================================= -->
+
+## How It Works: 3 Steps {data-menu-title="Architecture"}
+
+::: {.flow}
+
+::: {.step}
+[1 · INPUT]{.step-label}
+Patient demographics + initial weight + GLP-1 start date
+:::
+
+::: {.flow-arrow}
+➜
+:::
+
+::: {.step}
+[2 · LOGIC]{.step-label}
+Compute the 4-week titration · detect severe adverse events · delay escalation if needed
+:::
+
+::: {.flow-arrow}
+➜
+:::
+
+::: {.step}
+[3 · OUTPUT]{.step-label}
+A complete FHIR Bundle: CarePlan + MedicationRequests + Tasks
+:::
+
+:::
+
+```python
+from datetime import date
+from src.engine.titration import GLP1TitrationEngine
+
+engine = GLP1TitrationEngine(demographics, initial_weight, start_date=date(2026, 6, 2))
+result = engine.generate_bundle()   # -> CarePlanEngineResult(.bundle, .task_ids, ...)
+```
+
+::: {.notes}
+Architecturally the engine is dead simple — three steps, and it stays abstract
+enough that both clinical and technical folks can follow it.
+
+Step one, input: who's the patient, what's their starting weight, and when does
+therapy begin. Step two, the logic: it computes the standard four-week 0.25 mg
+schedule, and critically, it watches for severe adverse events — if it sees one,
+it delays the later weeks and flags for provider review. Step three, output: it
+emits a single FHIR transaction Bundle containing everything.
+
+On the code side it's just as clean. You construct a GLP1TitrationEngine with the
+inputs, call generate_bundle, and you get back a result object holding the FHIR
+bundle plus metadata like the IDs of any provider tasks that were created. That's
+the whole public surface.
+:::
+
+<!-- ========================================================================
+SLIDE 6 — STANDARD vs ADVERSE EVENT PATHWAYS  (the "wow" moment)
+========================================================================= -->
+
+## Two Scenarios {data-menu-title="Scenarios"}
+
+::: {.compare}
+::: {.pane-standard}
+### ✅ Standard
+
+[W1]{.week .week-std} → [W2]{.week .week-std} → [W3]{.week .week-std} → [W4]{.week .week-std}
+
+**Outcome:** four 0.25 mg orders, no delays, no provider involvement.
+:::
+
+::: {.pane-adverse}
+### 🚨 Severe Nausea
+
+[W1]{.week .week-std} → [W2 HOLD]{.week .week-delay} → [W3 +7d]{.week .week-delay} → [W4 +7d]{.week .week-delay}
+
+**Outcome:** same orders **+** delayed start dates **+** a provider `Task`.
+:::
+:::
+
+```{mermaid}
+graph LR
+  A[Patient Input] --> B[Titration Logic]
+  B --> C{Severe Adverse Event?}
+  C -->|Yes| D[Delay Schedule + Create Task]
+  C -->|No| E[Standard Schedule]
+  D --> F[Generate FHIR Bundle]
+  E --> F
+```
+
+::: {.callout-orange .callout}
+When [**severe nausea**]{.orange} is detected, the engine automatically delays
+subsequent week start dates by 7 days **and** creates a provider triage `Task`.
+:::
+
+::: {.notes}
+This is the moment that makes the whole thing worth building.
+
+On the left, the happy path: a patient tolerates the drug fine. The engine produces
+four weekly 0.25 mg orders, back to back, no delays, nobody paged.
+
+On the right, the same patient reports severe nausea in week two. Watch what happens
+automatically. The engine holds escalation, pushes the start dates of the remaining
+weeks out by seven days, and — this is the safety-critical part — it generates a
+FHIR Task assigned to a weight-management clinician with urgent priority.
+
+So the decision tree at the bottom is the entire clinical brain: input, compute,
+ask "was there a severe adverse event?", and branch. No human had to remember the
+protocol. The system encodes it, every single time, with a full audit trail.
+:::
+
+<!-- ========================================================================
+SLIDE 7 — THE FHIR BUNDLE OUTPUT
+========================================================================= -->
+
+## What Does the Output Look Like? {data-menu-title="Bundle Output"}
+
+```{.plaintext .tree}
+Bundle (transaction)
+├── 👤 Patient                 (US Core, demographics + MRN)
+├── ⚖️  Observation            (body weight · LOINC 29463-7)
+├── 📋 CarePlan                (active · weight-management)
+├── 💊 MedicationRequest       (Week 1 · semaglutide 0.25 mg)
+├── 💊 MedicationRequest       (Week 2)
+├── 💊 MedicationRequest       (Week 3)
+├── 💊 MedicationRequest       (Week 4)
+└── 🚨 Task + Observation      (provider triage — only if adverse event)
+```
+
+::: {.fragment}
+```json
+{
+  "resourceType": "MedicationRequest",
+  "status": "active",
+  "intent": "order",
+  "medicationCodeableConcept": {
+    "coding": [{
+      "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+      "code": "1991302",
+      "display": "semaglutide 0.25 MG/0.37 ML Pen Injector"
+    }]
+  },
+  "dosageInstruction": [{ "text": "Inject 0.25 mg subcutaneously once weekly — titration week 1" }]
+}
+```
+:::
+
+::: {.callout-green .callout}
+Every resource carries a US Core profile and coded terminology — [**ready for any FHIR-compliant EHR**]{.green}.
+:::
+
+::: {.notes}
+Here's the deliverable: a single FHIR transaction Bundle. At the top is the patient,
+then a body-weight Observation coded with LOINC, then the CarePlan that ties it all
+together, then the four weekly MedicationRequests. And if there was a severe adverse
+event, you also get the provider Task plus an adverse-event Observation appended.
+
+The JSON below is a real, trimmed MedicationRequest. Notice it's not hand-rolled
+strings — the medication is coded with RxNorm code 1991302, the actual semaglutide
+0.25 mg pen injector, and the dosage instruction reads like a real prescription.
+
+Crucially, every resource is stamped with a US Core profile. That's the US national
+implementation guide for FHIR. So this bundle isn't just valid FHIR — it's the
+flavor of FHIR that American EHRs actually expect. We'll see the full JSON live in
+the demo.
+:::
+
+<!-- ========================================================================
+SLIDE 8 — LIVE DEMO BRIDGE  (transition to screen share)
+========================================================================= -->
+
+## Let's See It In Action {.dimmed data-menu-title="Demo Bridge"}
+
+```python
+from datetime import date
+from src.engine.titration import GLP1TitrationEngine
+from src.models.fhir_helpers import PatientDemographics, WeightObservationInput
+
+engine = GLP1TitrationEngine(
+    demographics=PatientDemographics(
+        family_name="Rivera", given_names=["Alex"],
+        birth_date=date(1985, 3, 14), gender="female", mrn="MRN-10042",
+    ),
+    initial_weight=WeightObservationInput(value_kg=98.4, observed_on=date(2026, 6, 1)),
+    start_date=date(2026, 6, 2),
+)
+result = engine.generate_bundle()
+```
+
+::: {.center}
+[⬇️ In the next segment, we'll run this **live**.]{.big .orange}
+:::
+
+<!--
+============================================================================
+>>> SCREEN-SHARE / LIVE DEMO BEGINS HERE <<<
+The slide deck (Part 1) ends on this slide. Stop the slide capture and switch
+your recording source to the terminal/editor screen share. Suggested live flow:
+  1. Show the project layout and `pip install -e ".[dev]"`.
+  2. Run the engine code above in a Python REPL; pretty-print result.bundle.
+  3. Run `python3 scripts/generate_samples.py` to produce both sample bundles.
+  4. Re-run with apply_adverse_event(...) to show the Task + delayed dates.
+  5. Optionally validate the bundle against a public FHIR validator.
+============================================================================
+-->
+
+::: {.notes}
+Okay — this is the bridge into the live demo. On screen is the exact code we'll run.
+We build a patient, Alex Rivera, give a starting weight of 98.4 kilograms and a
+start date, then call generate_bundle.
+
+I've dimmed this slide on purpose to signal the transition. At this point in the
+recording I'll stop the slide capture and switch over to a screen share of my
+terminal and editor.
+
+In that next segment we'll install the package, run this exact snippet live,
+pretty-print the resulting FHIR bundle, generate the sample files, and then inject
+a severe adverse event so you can watch the Task and the delayed dates appear in
+real time. Let's switch over.
+:::
+
+<!-- ========================================================================
+SLIDE 9 — KEY TAKEAWAYS
+========================================================================= -->
+
+## Three Takeaways {data-menu-title="Takeaways"}
+
+::: {.cards}
+::: {.card .card-green}
+[✅]{.card-icon}
+[Less manual work]{.card-title .green}
+[GLP-1 automation cuts spreadsheet busywork and improves compliance.]{.card-body}
+:::
+::: {.card .card-green}
+[✅]{.card-icon}
+[EHR-ready by design]{.card-title .green}
+[FHIR standards enable EHR integration without custom engineering.]{.card-body}
+:::
+::: {.card .card-green}
+[✅]{.card-icon}
+[Production-ready]{.card-title .green}
+[Clinically modeled and US Core aligned — not a prototype.]{.card-body}
+:::
+:::
+
+::: {.notes}
+Three things to take away.
+
+One: automation removes the manual, spreadsheet-driven busywork and makes dosing
+consistent, which directly helps patient compliance and safety.
+
+Two: because we built on FHIR and US Core, this slots into existing EHR systems
+without a custom integration project for every site.
+
+Three: this is production-grade. The clinical logic — the four-week ladder, the
+severe-event hold, the provider task — is modeled deliberately and the output is
+US Core aligned. It's built to be deployed, not just demoed.
+:::
+
+<!-- ========================================================================
+SLIDE 10 — CALL TO ACTION
+========================================================================= -->
+
+## Next Steps {data-menu-title="Next Steps"}
+
+::: {.cards}
+::: {.card .card-blue}
+[⭐]{.card-icon}
+[Get the code]{.card-title .blue}
+[github.com/naveedpash/<br/>clinical-careplan-automation]{.card-body}
+:::
+::: {.card .card-green}
+[⚙️]{.card-icon}
+[Try it]{.card-title .green}
+[`pip install -e ".[dev]"`<br/>then `pytest tests/ -v`]{.card-body}
+:::
+::: {.card .card-orange}
+[▶️]{.card-icon}
+[Watch Part 2]{.card-title .orange}
+[Live demo & full code walkthrough]{.card-body}
+:::
+:::
+
+::: {.center}
+[**Questions? Comments? Subscribe for Part 2!**]{.big}
+
+[Scan / visit: github.com/naveedpash/clinical-careplan-automation]{.muted .small}
+:::
+
+<!-- Optional: drop a QR code PNG here that links to the repo, e.g.
+     ![Repo QR code](images/repo-qr.png){fig-alt="QR code linking to the GitHub repository" width="160"}
+     Generate with: `qrencode -o images/repo-qr.png https://github.com/naveedpash/clinical-careplan-automation`
+-->
+
+::: {.notes}
+That's the deck. If you want to dig in, the full source is on GitHub at
+naveedpash slash clinical-careplan-automation. Cloning it and running pip install
+dash e with the dev extras, then pytest, gets you a green test suite in under a
+minute.
+
+Part two is the live demo and full code walkthrough — that's the screen-share
+segment. If this was useful, subscribe so you catch it, and drop any questions in
+the comments. Thanks for watching.
+:::
