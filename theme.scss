@@ -1,0 +1,221 @@
+/*-- scss:defaults --*/
+// ---------------------------------------------------------------------------
+// Custom dark theme for the GLP-1 / FHIR YouTube presentation.
+// Built on top of reveal.js' "dark" theme. Tuned for 1080p screen recording:
+// large type, high contrast, healthcare-appropriate accent palette.
+// ---------------------------------------------------------------------------
+
+// Brand / accent palette (mirrors the inline color tokens used in slides)
+$accent-green:  #10b981; // standard / positive pathways
+$accent-orange: #f97316; // alerts / adverse events
+$accent-blue:   #3b82f6; // FHIR resources
+$accent-red:    #ef4444; // problems / pain points
+
+// Background + foreground
+$body-bg:   #0b1220; // deep dark blue/black
+$body-color: #f1f5f9; // near-white text
+
+// Fonts (system stack; falls back gracefully when offline)
+$font-family-sans-serif: "Inter", "Segoe UI", "Helvetica Neue", Arial, system-ui, sans-serif;
+$font-family-monospace: "JetBrains Mono", "Fira Code", "SFMono-Regular", Consolas, monospace;
+
+// reveal.js variables
+$backgroundColor: $body-bg;
+$mainColor: $body-color;
+$headingColor: #ffffff;
+$linkColor: $accent-blue;
+$linkColorHover: lighten($accent-blue, 12%);
+$selectionBackgroundColor: $accent-blue;
+
+// Type scale — large enough to read at small YouTube thumbnail sizes
+$mainFontSize: 30px;
+$headingFontWeight: 700;
+$heading1Size: 2.1em;
+$heading2Size: 1.5em;
+$heading3Size: 1.2em;
+
+/*-- scss:rules --*/
+
+.reveal {
+  font-family: $font-family-sans-serif;
+  letter-spacing: 0.1px;
+}
+
+.reveal h1,
+.reveal h2,
+.reveal h3 {
+  letter-spacing: -0.5px;
+  text-shadow: none;
+}
+
+// Slightly tighter, more legible body lists
+.reveal ul,
+.reveal ol {
+  line-height: 1.45;
+}
+
+.reveal section img {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+
+// ---------------------------------------------------------------------------
+// Accent color utility classes (used inline in the .qmd via [text]{.class})
+// ---------------------------------------------------------------------------
+.green  { color: $accent-green  !important; }
+.orange { color: $accent-orange !important; }
+.blue   { color: $accent-blue   !important; }
+.red    { color: $accent-red    !important; }
+.muted  { color: #94a3b8        !important; }
+
+.fw-bold { font-weight: 700 !important; }
+.big     { font-size: 1.25em !important; }
+.small   { font-size: 0.8em !important; }
+.center  { text-align: center !important; }
+
+// ---------------------------------------------------------------------------
+// Tech-stack badges (title slide)
+// ---------------------------------------------------------------------------
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+  margin-top: 1.2rem;
+}
+.badge {
+  display: inline-block;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.62em;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  color: #dbeafe;
+}
+
+// ---------------------------------------------------------------------------
+// Card grid — used for FHIR resource cards, takeaways, CTAs
+// ---------------------------------------------------------------------------
+.cards {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: stretch;
+  margin-top: 1rem;
+}
+.card {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 14px;
+  padding: 1.1rem 1.2rem;
+  text-align: left;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+.card .card-icon { font-size: 1.8em; display: block; margin-bottom: 0.3rem; }
+.card .card-title { font-weight: 700; font-size: 0.95em; margin-bottom: 0.25rem; }
+.card .card-body { font-size: 0.72em; color: #cbd5e1; line-height: 1.35; }
+
+.card-blue   { border-color: rgba(59, 130, 246, 0.55); }
+.card-green  { border-color: rgba(16, 185, 129, 0.55); }
+.card-orange { border-color: rgba(249, 115, 22, 0.55); }
+.card-red    { border-color: rgba(239, 68, 68, 0.55); }
+
+// ---------------------------------------------------------------------------
+// Two-column side-by-side comparison (standard vs adverse)
+// ---------------------------------------------------------------------------
+.compare {
+  display: flex;
+  gap: 1.2rem;
+  margin-top: 0.6rem;
+}
+.compare > div {
+  flex: 1;
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+  font-size: 0.78em;
+}
+.pane-standard { background: rgba(16, 185, 129, 0.10); border: 1px solid rgba(16, 185, 129, 0.5); }
+.pane-adverse  { background: rgba(249, 115, 22, 0.10); border: 1px solid rgba(249, 115, 22, 0.5); }
+.pane-standard h3 { color: $accent-green; }
+.pane-adverse  h3 { color: $accent-orange; }
+
+// ---------------------------------------------------------------------------
+// Timeline pills (week 1 -> 4)
+// ---------------------------------------------------------------------------
+.timeline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 1rem 0;
+  flex-wrap: wrap;
+}
+.week {
+  padding: 0.55rem 0.9rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.75em;
+  min-width: 92px;
+  text-align: center;
+}
+.week-std   { background: rgba(16, 185, 129, 0.18); border: 2px solid $accent-green; color: #d1fae5; }
+.week-delay { background: rgba(249, 115, 22, 0.18); border: 2px solid $accent-orange; color: #ffedd5; }
+.week-arrow { font-size: 1.2em; color: #64748b; }
+
+// ---------------------------------------------------------------------------
+// Process flow (3 steps)
+// ---------------------------------------------------------------------------
+.flow {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0.8rem 0;
+}
+.flow .step {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 0.9rem;
+  font-size: 0.72em;
+}
+.flow .step .step-label { font-weight: 700; color: $accent-blue; display: block; margin-bottom: 0.3rem; }
+.flow .flow-arrow { display: flex; align-items: center; font-size: 1.6em; color: #64748b; }
+
+// ---------------------------------------------------------------------------
+// Callout / note boxes
+// ---------------------------------------------------------------------------
+.callout {
+  border-left: 4px solid $accent-blue;
+  background: rgba(59, 130, 246, 0.08);
+  padding: 0.7rem 1rem;
+  border-radius: 0 10px 10px 0;
+  font-size: 0.8em;
+  margin-top: 0.8rem;
+}
+.callout-green  { border-left-color: $accent-green;  background: rgba(16, 185, 129, 0.08); }
+.callout-orange { border-left-color: $accent-orange; background: rgba(249, 115, 22, 0.08); }
+.callout-red    { border-left-color: $accent-red;    background: rgba(239, 68, 68, 0.08); }
+
+// ASCII / tree hierarchy blocks
+.reveal pre.tree code {
+  color: #e2e8f0;
+  font-size: 0.62em;
+  line-height: 1.4;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+// Dimmed transition slide (demo bridge)
+.dimmed { background: #05080f !important; }
+.reveal .dimmed h2 { color: #cbd5e1; }
+
+// Larger code so it reads on video
+.reveal pre code { font-family: $font-family-monospace; font-size: 0.66em; }
+
+// Slide footer / source line
+.source { font-size: 0.6em; color: #64748b; margin-top: 0.6rem; }
